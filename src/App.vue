@@ -35,7 +35,7 @@ const getWaifu = () => {
   loading.value = true
 
   WaifuService.getWaifu().then(res => {
-    const url = `https:/anime.sahabatgemarikan.id/cors/${res.data.url}`
+    const url = `https://anime.sahabatgemarikan.id/cors/${res.data.url}`
 
     const container = document.querySelector('#container')
     const maxWidth = container.offsetWidth * 0.9
