@@ -8,10 +8,17 @@ const props = defineProps({
 
 const borderClasses = computed(() => {
   if (props.fragment.empty) {
-    return cntl`hover:border-gray-800 hover:cursor-default`
+    return cntl`
+      hover:cursor-default hover:border-gray-800
+      shadow-[inset_0px_5px_10px_rgba(0,0,0,0.5)]
+    `
   }
 
-  return cntl`hover:border-indigo-500 hover:cursor-pointer`
+  return cntl`
+    hover:cursor-pointer hover:border-indigo-500
+    hover:ring hover:ring-indigo-500 hover:ring-opacity-50 hover:z-50
+    transition ease-in-out hover:scale-105
+  `
 })
 </script>
 

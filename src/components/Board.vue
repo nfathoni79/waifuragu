@@ -10,6 +10,7 @@ const fragmentSize = ref({ width: 0, height: 0 })
 
 const preparing = ref(true)
 const shuffling = ref(false)
+const imageReady = ref(false)
 
 const frameSizeStyles = computed(() => {
   return {
@@ -38,6 +39,7 @@ const solved = computed(() => {
  * @param args Image URL and dimension.
  */
 const start = (args) => {
+  imageReady.value = false
   preparing.value = true
 
   image.value = args.image
@@ -61,6 +63,7 @@ const start = (args) => {
     }
     
     generateFragments()
+    imageReady.value = true
     await shuffleFragments()
 
     preparing.value = false
@@ -116,7 +119,7 @@ const shuffleFragments = async () => {
   shuffling.value = true
 
   for (let i = 0; i < totalFragments.value * 5; i++) {
-    const emptyFragment = fragments.value.find(frag => frag.empty)
+    const emptyFragment = fragments.value[totalFragments.value - 1]
     const movableFragments = fragments.value.filter(frag => {
       return getAdjacentOrders(emptyFragment).indexOf(frag.styles.order) > -1
     })
@@ -176,7 +179,7 @@ defineExpose({ start, shuffleFragments })
 
 <template>
   <div>
-    <div class="mx-auto relative" :style="frameSizeStyles">
+    <div class="mx-auto relative shadow-xl" :style="frameSizeStyles">
       <!-- Solved image -->
       <div v-if="solved" :style="{ background: `url(${image})`}"
         class="absolute top-0 left-0 h-full w-full">
@@ -188,7 +191,7 @@ defineExpose({ start, shuffleFragments })
       </div>
 
       <!-- Fragments -->
-      <div class="flex flex-wrap bg-indigo-900">
+      <div v-show="imageReady" class="flex flex-wrap bg-indigo-900">
         <Fragment v-for="fragment in fragments" :key="fragment.position"
           :fragment="fragment"
           @click="moveFragment(fragment)" />

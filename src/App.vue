@@ -10,6 +10,7 @@ import WaifuService from './services/WaifuService'
 
 const image = ref(null)
 const board = ref(null)
+const complexity = ref(0)
 
 const loading = ref(false)
 const playing = ref(false)
@@ -42,10 +43,6 @@ const getWaifu = () => {
     const maxHeight = container.offsetHeight * 0.7
 
     const loadImageOptions = {
-      // maxWidth: 300,
-      // maxHeight: 300,
-      // minWidth: 100,
-      // minHeight: 100,
       maxWidth,
       maxHeight,
       canvas: true,
@@ -55,10 +52,11 @@ const getWaifu = () => {
     fetch(url).then(res => res.blob()).then(blob => {
       loadImage(blob, img => {
         image.value = img.toDataURL()
+        const dimens = parseInt(complexity.value) + 3
 
         start({
           image: image.value,
-          dimens: { x: 3, y: 3},
+          dimens: { x: dimens, y: dimens},
         })
       }, loadImageOptions)
     }).catch(err => {
@@ -81,11 +79,12 @@ const getCurrentYear = () => {
 </script>
 
 <template>
-  <div id="container" class="mx-auto max-w-4xl min-h-screen p-4">
+  <div id="container"
+    class="mx-auto flex flex-col justify-center max-w-4xl min-h-screen p-4">
     <header>
-      <div class="text-center">
+      <div class="text-center text-gray-800">
         <h1 class="text-4xl font-semibold">
-          Wai<span class="bg-indigo-500 px-1 text-indigo-50">Fu</span>ragu
+          Wai<span @click="playing = false" class="bg-indigo-500 hover:bg-indigo-600 shadow-md px-1 text-indigo-50 cursor-pointer">Fu</span>ragu
         </h1>
         <p class="mt-2">Defragment your fragmented Waifu</p>
       </div>
@@ -104,7 +103,20 @@ const getCurrentYear = () => {
         </div>
       </div>
 
-      <div v-show="!playing" class="flex items-center justify-center h-32">
+      <div v-show="!playing"
+        class="flex flex-col items-center justify-center gap-4 py-8">
+        <div class="flex items-center justify-center gap-2 text-gray-800">
+          <label for="complexity">Complexity</label>
+          <select id="complexity" v-model="complexity"
+            class="border-indigo-500 shadow-md
+            focus:outline-none focus:border-indigo-500
+            focus:ring focus:ring-indigo-300">
+            <option value="0">Low</option>
+            <option value="1">Medium</option>
+            <option value="2">High</option>
+          </select>
+        </div>
+
         <AButton @click="getWaifu" :disabled="loading">
           <Spinner v-if="loading" class="mr-2 w-6"/>
           Get a Waifu
