@@ -11,5 +11,8 @@ export default {
     require('@tailwindcss/forms'),
   ],
   darkMode: 'class',
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 }
 

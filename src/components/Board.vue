@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { sample } from 'lodash'
+import cntl from 'cntl'
 import Fragment from './Fragment.vue'
 
 const image = ref(null)
@@ -102,6 +103,7 @@ const generateFragments = () => {
         height: `${fragmentSize.value.height}px`,
         order: i,
       },
+      transitionClasses: cntl`transition ease-in-out duration-75`,
     })
   }
 }
@@ -137,16 +139,22 @@ const shuffleFragments = async () => {
  * Move fragment to an empty space.
  * @param frag Fragment to be moved.
  */
-const moveFragment = (fragment) => {
+const moveFragment = async (fragment) => {
   if (fragment.empty) return
 
   // Find 4 direct adjacent fragments and see if any of them is empty.
+  // Also find the direction of the empty fragment.
+  let directionIndex = -1
+  const adjacentOrders = getAdjacentOrders(fragment)
   const target = fragments.value.find(frag => {
-    return frag.empty && getAdjacentOrders(fragment).indexOf(frag.styles.order) > -1
+    directionIndex = adjacentOrders.indexOf(frag.styles.order)
+    return frag.empty && directionIndex > -1
   })
 
-  // If found the empty fragment, switch the flex order
-  target && switchFragments(target, fragment)
+  // If found the empty fragment, switch the fragments with animation.
+  if (target) {
+    await switchFragmentsWithAnim(fragment, target, directionIndex)
+  }
 }
 
 /**
@@ -156,6 +164,47 @@ const moveFragment = (fragment) => {
  */
 const switchFragments = (frag1, frag2) => {
   [frag1.styles.order, frag2.styles.order] = [frag2.styles.order, frag1.styles.order]
+}
+
+/**
+ * Switch two fragments with animation.
+ * @param fragment Fragment to be switched.
+ * @param target Target fragment.
+ * @param {Number} direction Direction relative to fragment. 0=L, 1=R, 2=T, 3=B.
+ */
+ const switchFragmentsWithAnim = async (fragment, target, direction) => {
+  let translateClass = null
+
+  switch (direction) {
+    case 0:
+      translateClass = cntl`translate-x-full`
+      break
+    case 1:
+      translateClass = cntl`-translate-x-full`
+      break
+    case 2:
+      translateClass = cntl`translate-y-full`
+      break
+    case 3:
+      translateClass = cntl`-translate-y-full`
+      break
+    default:
+      break
+  }
+
+  if (!translateClass) return
+
+  const baseTransitionClass = cntl`transition ease-in-out`
+
+  switchFragments(fragment, target)
+  fragment.transitionClasses = cntl`
+    ${baseTransitionClass} ${translateClass} duration-0
+  `
+
+  await delay(0)
+  fragment.transitionClasses = cntl`
+    ${baseTransitionClass} translate-x-0 translate-y-0 duration-75
+  `
 }
 
 /**
@@ -182,12 +231,12 @@ defineExpose({ start, shuffleFragments })
     <div class="mx-auto relative shadow-xl" :style="frameSizeStyles">
       <!-- Solved image -->
       <div v-if="solved" :style="{ background: `url(${image})`}"
-        class="absolute top-0 left-0 h-full w-full">
+        class="absolute top-0 left-0 h-full w-full z-50">
       </div>
 
       <!-- Cover -->
       <div v-if="preparing || shuffling"
-        class="absolute top-0 left-0 h-full w-full bg-indigo-900/60">
+        class="absolute top-0 left-0 h-full w-full bg-indigo-900/60 z-40">
       </div>
 
       <!-- Fragments -->

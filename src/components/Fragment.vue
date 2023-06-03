@@ -6,7 +6,7 @@ const props = defineProps({
   fragment: Object,
 })
 
-const borderClasses = computed(() => {
+const dynamicClasses = computed(() => {
   if (props.fragment.empty) {
     return cntl`
       hover:cursor-default hover:border-gray-800
@@ -16,14 +16,14 @@ const borderClasses = computed(() => {
 
   return cntl`
     hover:cursor-pointer hover:border-indigo-500
-    hover:ring hover:ring-indigo-500 hover:ring-opacity-50 hover:z-50
-    transition ease-in-out hover:scale-105
+    hover:ring hover:ring-indigo-500 hover:ring-opacity-50 hover:z-10
+    ${props.fragment.transitionClasses}
   `
 })
 </script>
 
 <template>
   <div :style="fragment.styles"
-    :class="['border border-gray-800', borderClasses]">
+    :class="['border border-gray-800', dynamicClasses]">
   </div>
 </template>
