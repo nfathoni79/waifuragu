@@ -8,6 +8,7 @@ const image = ref(null)
 const dimens = ref({ x: 0, y: 0 })
 const fragments = ref([])
 const fragmentSize = ref({ width: 0, height: 0 })
+const orderPositionMaps = ref([])
 
 const preparing = ref(true)
 const shuffling = ref(false)
@@ -76,6 +77,7 @@ const start = (args) => {
  */
 const generateFragments = () => {
   fragments.value = []
+  orderPositionMaps.value = []
 
   const bgStyle = (index) => {
     return (index === totalFragments.value - 1)
@@ -104,7 +106,15 @@ const generateFragments = () => {
         order: i,
       },
       transitionClasses: cntl`transition ease-in-out duration-75`,
+      adjacentOrders: [
+        i % dimens.value.x ? i - 1 : null,
+        (i + 1) % dimens.value.x ? i + 1 : null,
+        (i - dimens.value.x) >= 0 ? i - dimens.value.x : null,
+        (i + dimens.value.x) < totalFragments.value ? i + dimens.value.x : null,
+      ],
     })
+
+    orderPositionMaps.value.push(i)
   }
 }
 
@@ -123,7 +133,7 @@ const shuffleFragments = async () => {
   for (let i = 0; i < totalFragments.value * 5; i++) {
     const emptyFragment = fragments.value[totalFragments.value - 1]
     const movableFragments = fragments.value.filter(frag => {
-      return getAdjacentOrders(emptyFragment).indexOf(frag.styles.order) > -1
+      return emptyFragment.adjacentOrders.indexOf(frag.styles.order) > -1
     })
 
     const randomFragment = sample(movableFragments)
@@ -139,21 +149,18 @@ const shuffleFragments = async () => {
  * Move fragment to an empty space.
  * @param frag Fragment to be moved.
  */
-const moveFragment = async (fragment) => {
+ const moveFragment = async (fragment) => {
   if (fragment.empty) return
 
-  // Find 4 direct adjacent fragments and see if any of them is empty.
-  // Also find the direction of the empty fragment.
-  let directionIndex = -1
-  const adjacentOrders = getAdjacentOrders(fragment)
-  const target = fragments.value.find(frag => {
-    directionIndex = adjacentOrders.indexOf(frag.styles.order)
-    return frag.empty && directionIndex > -1
+  // Find the empty fragment order from the clicked fragment's adjacent orders
+  const targetOrder = fragment.adjacentOrders.find(order => {
+    return orderPositionMaps.value[order] === totalFragments.value - 1
   })
 
-  // If found the empty fragment, switch the fragments with animation.
-  if (target) {
-    await switchFragmentsWithAnim(fragment, target, directionIndex)
+  // If found the empty fragment order, switch the fragments with animation.
+  if (targetOrder > -1) {
+    const directionIndex = fragment.adjacentOrders.indexOf(targetOrder)
+    await switchFragmentsWithAnim(fragment, fragments.value[orderPositionMaps.value[targetOrder]], directionIndex)
   }
 }
 
@@ -163,7 +170,21 @@ const moveFragment = async (fragment) => {
  * @param frag2 Fragment 2.
  */
 const switchFragments = (frag1, frag2) => {
-  [frag1.styles.order, frag2.styles.order] = [frag2.styles.order, frag1.styles.order]
+  [
+    orderPositionMaps.value[frag1.styles.order],
+    orderPositionMaps.value[frag2.styles.order],
+    frag1.styles.order,
+    frag2.styles.order,
+    frag1.adjacentOrders,
+    frag2.adjacentOrders
+  ] = [
+    orderPositionMaps.value[frag2.styles.order],
+    orderPositionMaps.value[frag1.styles.order],
+    frag2.styles.order,
+    frag1.styles.order,
+    frag2.adjacentOrders,
+    frag1.adjacentOrders
+  ]
 }
 
 /**
@@ -205,22 +226,6 @@ const switchFragments = (frag1, frag2) => {
   fragment.transitionClasses = cntl`
     ${baseTransitionClass} translate-x-0 translate-y-0 duration-75
   `
-}
-
-/**
- * Get the order values of 4 adjacent fragment.
- * @param fragment Fragment reference. 
- */
-const getAdjacentOrders = (fragment) => {
-  const pos = fragment.styles.order
-  
-  // Left, Right, Top, Bottom order values
-  return [
-    pos % dimens.value.x ? pos - 1 : null,
-    (pos + 1) % dimens.value.x ? pos + 1 : null,
-    pos - dimens.value.x,
-    pos + dimens.value.x,
-  ]
 }
 
 defineExpose({ start, shuffleFragments })
